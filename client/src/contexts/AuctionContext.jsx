@@ -57,6 +57,8 @@ const auctionReducer = (state, action) => {
 			return { ...state, error: action.payload };
 		case 'CLEAR_ERROR':
 			return { ...state, error: null };
+		case 'RESET_GAME':
+			return { ...initialState };
 		default:
 			return state;
 	}
@@ -208,6 +210,10 @@ export const AuctionProvider = ({ children }) => {
 			dispatch({ type: 'SET_ERROR', payload: message });
 		});
 
+		socket.on('gameReset', () => {
+			dispatch({ type: 'RESET_GAME' });
+		});
+
 		return () => {
 			socket.off('joinedAuction');
 			socket.off('userJoined');
@@ -225,6 +231,7 @@ export const AuctionProvider = ({ children }) => {
 			socket.off('auctionComplete');
 			socket.off('nominationRejected');
 			socket.off('userLeft');
+			socket.off('gameReset');
 		};
 	}, [socket, state.currentUser]);
 
@@ -251,12 +258,19 @@ export const AuctionProvider = ({ children }) => {
 		dispatch({ type: 'CLEAR_ERROR' });
 	};
 
+	const resetGame = () => {
+		if (socket) {
+			socket.emit('resetGame');
+		}
+	};
+
 	const value = {
 		...state,
 		joinAuction,
 		nominatePlayer,
 		placeBid,
 		clearError,
+		resetGame,
 	};
 
 	return (

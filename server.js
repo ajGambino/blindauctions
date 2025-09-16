@@ -27,7 +27,7 @@ const gameState = {
 	currentNominator: 0,
 	bids: new Map(),
 	timer: null,
-	timeRemaining: 5,
+	timeRemaining: 30,
 	auctionActive: false,
 	gameStarted: false,
 	playersAuctioned: 0,
@@ -130,7 +130,8 @@ function requestNomination() {
 		console.log(
 			`${nominator.username} has completed their roster, moving to next nominator`
 		);
-		gameState.currentNominator = (gameState.currentNominator + 1) % userArray.length;
+		gameState.currentNominator =
+			(gameState.currentNominator + 1) % userArray.length;
 
 		// Check if all users are complete
 		const allUsersComplete = userArray.every((user) => user.playersOwned >= 5);
@@ -169,19 +170,23 @@ function startBidding(player) {
 	gameState.bids.clear();
 
 	// Check how many users can actually bid on this position
-	const eligibleBidders = Array.from(gameState.users.values()).filter(user => {
-		const position = player.position;
-		// Check if user can still bid on this position
-		if (position === 'QB' && user.team.QB) return false;
-		if (position === 'RB' && user.team.RB) return false;
-		if (position === 'WR' && user.team.WR.length >= 2) return false;
-		if (position === 'TE' && user.team.TE) return false;
-		return true;
-	});
+	const eligibleBidders = Array.from(gameState.users.values()).filter(
+		(user) => {
+			const position = player.position;
+			// Check if user can still bid on this position
+			if (position === 'QB' && user.team.QB) return false;
+			if (position === 'RB' && user.team.RB) return false;
+			if (position === 'WR' && user.team.WR.length >= 2) return false;
+			if (position === 'TE' && user.team.TE) return false;
+			return true;
+		}
+	);
 
 	// If only one person can bid (the nominator), auto-assign for $1
 	if (eligibleBidders.length <= 1) {
-		console.log(`Only ${eligibleBidders.length} eligible bidder(s), auto-assigning for $1`);
+		console.log(
+			`Only ${eligibleBidders.length} eligible bidder(s), auto-assigning for $1`
+		);
 
 		// Auto-assign to the only eligible bidder (should be the nominator)
 		const winner = eligibleBidders[0];
@@ -213,14 +218,20 @@ function startBidding(player) {
 		});
 
 		// Check if auction is complete
-		const allUsersComplete = Array.from(gameState.users.values()).every(user => user.playersOwned >= 5);
+		const allUsersComplete = Array.from(gameState.users.values()).every(
+			(user) => user.playersOwned >= 5
+		);
 
-		if (gameState.playersAuctioned >= gameState.totalPlayers || allUsersComplete) {
+		if (
+			gameState.playersAuctioned >= gameState.totalPlayers ||
+			allUsersComplete
+		) {
 			endAuction();
 		} else {
 			// Move to next nominator
 			const currentUserCount = Array.from(gameState.users.values()).length;
-			gameState.currentNominator = (gameState.currentNominator + 1) % Math.max(currentUserCount, 2);
+			gameState.currentNominator =
+				(gameState.currentNominator + 1) % Math.max(currentUserCount, 2);
 			setTimeout(() => {
 				requestNomination();
 			}, 2000); // Shorter delay since no bidding occurred
@@ -230,7 +241,7 @@ function startBidding(player) {
 
 	// Normal bidding process for multiple eligible bidders
 	gameState.auctionActive = true;
-	gameState.timeRemaining = 5;
+	gameState.timeRemaining = 30;
 
 	io.emit('biddingStarted', {
 		player: player,
@@ -271,7 +282,7 @@ function endBidding() {
 				tiedBidders.push({
 					username: bidder.username,
 					timestamp: bidData.timestamp,
-					timeDiff: bidData.timestamp - earliestBidTime
+					timeDiff: bidData.timestamp - earliestBidTime,
 				});
 			}
 
@@ -282,7 +293,7 @@ function endBidding() {
 					tiedBidders.push({
 						username: winner.username,
 						timestamp: earliestBidTime,
-						timeDiff: earliestBidTime - bidData.timestamp
+						timeDiff: earliestBidTime - bidData.timestamp,
 					});
 				}
 				winner = gameState.users.get(userId);
@@ -336,7 +347,8 @@ function endBidding() {
 	} else {
 		// Move to next nominator
 		const currentUserCount = Array.from(gameState.users.values()).length;
-		gameState.currentNominator = (gameState.currentNominator + 1) % Math.max(currentUserCount, 2);
+		gameState.currentNominator =
+			(gameState.currentNominator + 1) % Math.max(currentUserCount, 2);
 		setTimeout(() => {
 			requestNomination();
 		}, 3000);
@@ -347,6 +359,29 @@ function endAuction() {
 	io.emit('auctionComplete', {
 		finalTeams: Array.from(gameState.users.values()),
 	});
+}
+
+function resetGame() {
+	// Clear all timers
+	if (gameState.timer) {
+		clearInterval(gameState.timer);
+		gameState.timer = null;
+	}
+
+	// Reset game state
+	gameState.users.clear();
+	gameState.currentPlayer = null;
+	gameState.currentNominator = 0;
+	gameState.bids.clear();
+	gameState.timeRemaining = 30;
+	gameState.auctionActive = false;
+	gameState.gameStarted = false;
+	gameState.playersAuctioned = 0;
+
+	// Reset available players
+	availablePlayers = [...playerPool];
+
+	console.log('Game state reset');
 }
 
 io.on('connection', (socket) => {
@@ -474,6 +509,12 @@ io.on('connection', (socket) => {
 			console.log('All eligible players have bid, ending auction early');
 			endBidding();
 		}
+	});
+
+	socket.on('resetGame', () => {
+		console.log('Game reset requested by:', socket.id);
+		resetGame();
+		io.emit('gameReset');
 	});
 
 	socket.on('disconnect', () => {

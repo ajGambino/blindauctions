@@ -459,15 +459,21 @@ input::placeholder {
 
 .current-player-display {
 	display: flex;
-	flex-direction: column;
+	flex-direction: row;
 	align-items: center;
-	gap: 20px;
+	justify-content: center;
+	gap: 30px;
 }
 
 .current-player-card {
 	transform: scale(1.2);
 	border: 3px solid #ff6b6b;
 	box-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
+	flex-shrink: 0;
+}
+
+.timer-section {
+	flex-shrink: 0;
 }
 
 /* Timer */
@@ -1283,6 +1289,11 @@ input::placeholder {
 
 	.player-count {
 		font-size: 2em;
+	}
+
+	.current-player-display {
+		flex-direction: column;
+		gap: 20px;
 	}
 }
 

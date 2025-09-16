@@ -3,15 +3,24 @@ import { useAuction } from '../../contexts/AuctionContext';
 import PlayerCard from '../auction/PlayerCard';
 
 const FinalResults = () => {
-	const { finalTeams, currentUser } = useAuction();
-
-	const formatPlayerNames = (players) => {
-		if (!players || players.length === 0) return 'None';
-		return players.map((player) => player.name).join(', ');
-	};
+	const { finalTeams, currentUser, resetGame } = useAuction();
 
 	const isCurrentUser = (team) => {
 		return currentUser && team.id === currentUser.id;
+	};
+
+	const getAllPlayers = (team) => {
+		const players = [];
+		if (team.team.QB) players.push(team.team.QB);
+		if (team.team.RB) players.push(team.team.RB);
+		if (team.team.WR) players.push(...team.team.WR);
+		if (team.team.TE) players.push(team.team.TE);
+		return players;
+	};
+
+	const getTotalProjection = (team) => {
+		const players = getAllPlayers(team);
+		return players.reduce((total, player) => total + (player.projection || 0), 0).toFixed(1);
 	};
 
 	// Sort teams by budget remaining (descending) as a tiebreaker
@@ -38,76 +47,24 @@ const FinalResults = () => {
 										<span className='you-label'>(You)</span>
 									)}
 								</h4>
-								<div className='team-budget'>
-									Budget Remaining: <strong>${team.budget}</strong>
+								<div className='team-stats'>
+									<div className='team-budget'>
+										Budget: <strong>${team.budget}</strong>
+									</div>
+									<div className='team-projection'>
+										Total Projection: <strong>{getTotalProjection(team)}</strong>
+									</div>
 								</div>
 							</div>
 
 							<div className='team-roster'>
-								<div className='position-section'>
-									<h5 className='position-header'>QB</h5>
-									<div className='position-players'>
-										{team.team.QB ? (
-											<PlayerCard
-												player={team.team.QB}
-												className="roster-card"
-											/>
-										) : (
-											<div className="empty-position">No QB</div>
-										)}
-									</div>
-								</div>
-
-								<div className='position-section'>
-									<h5 className='position-header'>RB</h5>
-									<div className='position-players'>
-										{team.team.RB ? (
-											<PlayerCard
-												player={team.team.RB}
-												className="roster-card"
-											/>
-										) : (
-											<div className="empty-position">No RB</div>
-										)}
-									</div>
-								</div>
-
-								<div className='position-section'>
-									<h5 className='position-header'>WR</h5>
-									<div className='position-players'>
-										{team.team.WR && team.team.WR.length > 0 ? (
-											team.team.WR.map((player, idx) => (
-												<PlayerCard
-													key={idx}
-													player={player}
-													className="roster-card"
-												/>
-											))
-										) : (
-											<div className="empty-position">No WRs</div>
-										)}
-									</div>
-								</div>
-
-								<div className='position-section'>
-									<h5 className='position-header'>TE</h5>
-									<div className='position-players'>
-										{team.team.TE ? (
-											<PlayerCard
-												player={team.team.TE}
-												className="roster-card"
-											/>
-										) : (
-											<div className="empty-position">No TE</div>
-										)}
-									</div>
-								</div>
-							</div>
-
-							<div className='team-summary'>
-								<span className='players-count'>
-									{team.playersOwned}/5 Players
-								</span>
+								{getAllPlayers(team).map((player, idx) => (
+									<PlayerCard
+										key={idx}
+										player={player}
+										className="roster-card"
+									/>
+								))}
 							</div>
 						</div>
 					))}
@@ -116,7 +73,7 @@ const FinalResults = () => {
 				<div className='results-actions'>
 					<button
 						className='btn btn-primary'
-						onClick={() => window.location.reload()}
+						onClick={resetGame}
 					>
 						Start New Auction
 					</button>

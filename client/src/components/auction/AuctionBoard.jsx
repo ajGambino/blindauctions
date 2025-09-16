@@ -54,7 +54,9 @@ const AuctionBoard = () => {
 									className='current-player-card'
 									showPosition={true}
 								/>
-								<Timer timeRemaining={timeRemaining} />
+								<div className='timer-section'>
+									<Timer timeRemaining={timeRemaining} />
+								</div>
 							</div>
 						</div>
 					)}
