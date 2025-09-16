@@ -17,7 +17,7 @@ export const SocketProvider = ({ children }) => {
 
 	useEffect(() => {
 		const newSocket = io(
-			import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'
+			import.meta.env.VITE_SERVER_URL || window.location.origin
 		);
 
 		newSocket.on('connect', () => {
