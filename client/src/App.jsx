@@ -1,6 +1,8 @@
 import React from 'react';
 import { useAuction } from './contexts/AuctionContext';
-import JoinForm from './components/lobby/JoinForm';
+import { useAuth } from './contexts/AuthContext';
+import Auth from './components/auth/Auth';
+import GameLobby from './components/lobby/GameLobby';
 import WaitingRoom from './components/lobby/WaitingRoom';
 import AuctionBoard from './components/auction/AuctionBoard';
 import FinalResults from './components/game/FinalResults';
@@ -8,20 +10,47 @@ import Modal from './components/common/Modal';
 import './styles/global.css';
 
 function App() {
-	const { gameState, error, clearError } = useAuction();
+	const { gameState, joinAuction, error, clearError } = useAuction();
+	const { user, loading } = useAuth();
+
+	const handleJoinGame = (gameId) => {
+		joinAuction(gameId);
+	};
 
 	const renderCurrentScreen = () => {
+		// Show loading screen while checking authentication
+		if (loading) {
+			return (
+				<div className='screen'>
+					<div className='lobby-info'>
+						<h2>Loading...</h2>
+						<div className='loading-dots'>
+							<span></span>
+							<span></span>
+							<span></span>
+						</div>
+					</div>
+				</div>
+			);
+		}
+
+		// If not authenticated, show auth screen
+		if (!user) {
+			return <Auth />;
+		}
+
+		// If authenticated, handle game states
 		switch (gameState) {
-			case 'join':
-				return <JoinForm />;
 			case 'lobby':
+				return <GameLobby onJoinGame={handleJoinGame} />;
+			case 'waiting':
 				return <WaitingRoom />;
 			case 'game':
 				return <AuctionBoard />;
 			case 'final':
 				return <FinalResults />;
 			default:
-				return <JoinForm />;
+				return <GameLobby onJoinGame={handleJoinGame} />;
 		}
 	};
 

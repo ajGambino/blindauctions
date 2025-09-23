@@ -3,7 +3,7 @@ import { useAuction } from '../../contexts/AuctionContext';
 import PlayerCard from '../auction/PlayerCard';
 
 const FinalResults = () => {
-	const { finalTeams, currentUser, resetGame } = useAuction();
+	const { finalTeams, currentUser, returnToLobby } = useAuction();
 
 	const isCurrentUser = (team) => {
 		return currentUser && team.id === currentUser.id;
@@ -73,9 +73,9 @@ const FinalResults = () => {
 				<div className='results-actions'>
 					<button
 						className='btn btn-primary'
-						onClick={resetGame}
+						onClick={returnToLobby}
 					>
-						Start New Auction
+						Return to Lobby
 					</button>
 				</div>
 			</div>

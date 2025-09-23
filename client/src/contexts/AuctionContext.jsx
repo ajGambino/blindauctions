@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { useSocket } from './SocketContext';
+import { useAuth } from './AuthContext';
 
 const AuctionContext = createContext();
 
@@ -12,7 +13,8 @@ export const useAuction = () => {
 };
 
 const initialState = {
-	gameState: 'join', // 'join', 'lobby', 'game', 'final'
+	gameState: 'lobby', // 'lobby', 'waiting', 'game', 'final'
+	currentGameId: null,
 	currentUser: null,
 	allUsers: [],
 	playersInLobby: 0,
@@ -31,6 +33,8 @@ const auctionReducer = (state, action) => {
 	switch (action.type) {
 		case 'SET_GAME_STATE':
 			return { ...state, gameState: action.payload };
+		case 'SET_CURRENT_GAME_ID':
+			return { ...state, currentGameId: action.payload };
 		case 'SET_CURRENT_USER':
 			return { ...state, currentUser: action.payload };
 		case 'SET_ALL_USERS':
@@ -67,6 +71,7 @@ const auctionReducer = (state, action) => {
 export const AuctionProvider = ({ children }) => {
 	const [state, dispatch] = useReducer(auctionReducer, initialState);
 	const { socket } = useSocket();
+	const { user } = useAuth();
 
 	useEffect(() => {
 		if (!socket) return;
@@ -75,7 +80,7 @@ export const AuctionProvider = ({ children }) => {
 		socket.on('joinedAuction', (data) => {
 			dispatch({ type: 'SET_CURRENT_USER', payload: data.user });
 			dispatch({ type: 'SET_PLAYERS_IN_LOBBY', payload: data.playersInLobby });
-			dispatch({ type: 'SET_GAME_STATE', payload: 'lobby' });
+			dispatch({ type: 'SET_GAME_STATE', payload: 'waiting' });
 		});
 
 		socket.on('userJoined', (data) => {
@@ -212,6 +217,7 @@ export const AuctionProvider = ({ children }) => {
 
 		socket.on('gameReset', () => {
 			dispatch({ type: 'RESET_GAME' });
+			dispatch({ type: 'SET_GAME_STATE', payload: 'lobby' });
 		});
 
 		return () => {
@@ -236,10 +242,19 @@ export const AuctionProvider = ({ children }) => {
 	}, [socket, state.currentUser]);
 
 	// Actions
-	const joinAuction = (username) => {
-		if (socket) {
-			socket.emit('joinAuction', { username });
+	const joinAuction = (gameId) => {
+		if (socket && user && gameId) {
+			// Use the user's email as the username, or you can extract the part before @ if preferred
+			const username = user.email.split('@')[0];
+			dispatch({ type: 'SET_CURRENT_GAME_ID', payload: gameId });
+			dispatch({ type: 'SET_GAME_STATE', payload: 'waiting' });
+			socket.emit('joinAuction', { gameId, username });
 		}
+	};
+
+	const returnToLobby = () => {
+		dispatch({ type: 'RESET_GAME' });
+		dispatch({ type: 'SET_GAME_STATE', payload: 'lobby' });
 	};
 
 	const nominatePlayer = (playerId) => {
@@ -267,6 +282,7 @@ export const AuctionProvider = ({ children }) => {
 	const value = {
 		...state,
 		joinAuction,
+		returnToLobby,
 		nominatePlayer,
 		placeBid,
 		clearError,
