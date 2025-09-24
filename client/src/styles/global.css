@@ -1663,9 +1663,19 @@ input::placeholder {
 	}
 
 	.status-header {
-		flex-direction: column;
-		text-align: center;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
 		gap: 10px;
+	}
+
+	.phase-info {
+		text-align: left;
+		flex: 1;
+	}
+
+	.user-info {
+		flex-shrink: 0;
 	}
 
 	.user-stats {
@@ -1783,5 +1793,21 @@ input::placeholder {
 	.position-tab {
 		padding: 6px 12px;
 		font-size: 0.8em;
+	}
+
+	.status-header {
+		flex-wrap: wrap;
+	}
+
+	.phase-title {
+		font-size: 1.2em;
+	}
+
+	.phase-description {
+		font-size: 0.9em;
+	}
+
+	.user-card {
+		padding: 10px;
 	}
 }
