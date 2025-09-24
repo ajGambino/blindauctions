@@ -5,18 +5,63 @@
 	box-sizing: border-box;
 }
 
-/* Prevent iOS zoom on input focus */
+/* Prevent iOS zoom on input focus - More comprehensive */
 @supports (-webkit-touch-callout: none) {
 	input[type="text"],
 	input[type="number"],
 	input[type="email"],
 	input[type="password"],
+	input[type="search"],
 	select,
-	textarea {
+	textarea,
+	button,
+	.btn {
 		font-size: 16px !important;
 		transform-origin: left top;
 		transform: scale(0.875);
 		width: 114.2857%;
+	}
+
+	/* Override for buttons to maintain their appearance */
+	button,
+	.btn {
+		width: auto;
+		transform: scale(0.875);
+		transform-origin: center center;
+	}
+}
+
+/* Additional iOS-specific fixes */
+html {
+	-webkit-text-size-adjust: 100%;
+	-ms-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+	/* Ensure viewport doesn't zoom */
+	width: 100%;
+	overflow-x: hidden;
+}
+
+/* Prevent zoom on double tap and ensure proper mobile behavior */
+* {
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* Force initial scale on mobile browsers */
+@media screen and (max-width: 768px) {
+	html, body {
+		width: 100% !important;
+		height: 100% !important;
+		margin: 0 !important;
+		padding: 0 !important;
+		overflow-x: hidden;
+	}
+
+	/* Prevent horizontal scrolling that might cause zoom */
+	#root {
+		width: 100%;
+		max-width: 100%;
+		overflow-x: hidden;
 	}
 }
 
@@ -140,8 +185,11 @@ body {
 /* Input Fields */
 input[type='text'],
 input[type='number'],
+input[type='password'],
+input[type='email'],
 .username-input,
-.bid-input {
+.bid-input,
+.auth-input {
 	padding: 10px 14px;
 	font-size: 16px;
 	border: 2px solid rgba(255, 255, 255, 0.15);
@@ -156,8 +204,11 @@ input[type='number'],
 
 input[type='text']:focus,
 input[type='number']:focus,
+input[type='password']:focus,
+input[type='email']:focus,
 .username-input:focus,
-.bid-input:focus {
+.bid-input:focus,
+.auth-input:focus {
 	outline: none;
 	border-color: #ff6b6b;
 	background: rgba(255, 255, 255, 0.15);
@@ -292,7 +343,7 @@ input::placeholder {
 	display: block;
 	margin: 15px auto;
 	padding: 12px 16px;
-	font-size: 1.1em;
+	font-size: 16px;
 	border: 2px solid rgba(255, 255, 255, 0.15);
 	border-radius: 10px;
 	background: rgba(0, 0, 0, 0.3);

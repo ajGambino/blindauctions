@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuction } from './contexts/AuctionContext';
 import { useAuth } from './contexts/AuthContext';
 import Auth from './components/auth/Auth';
@@ -12,6 +12,15 @@ import './styles/global.css';
 function App() {
 	const { gameState, joinAuction, error, clearError } = useAuction();
 	const { user, loading } = useAuth();
+
+	// Scroll to top when game state changes
+	useEffect(() => {
+		// Multiple methods to ensure scroll to top works on all devices
+		window.scrollTo(0, 0);
+		window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+		document.body.scrollTop = 0; // For Safari
+		document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+	}, [gameState, user]);
 
 	const handleJoinGame = (gameId) => {
 		joinAuction(gameId);
