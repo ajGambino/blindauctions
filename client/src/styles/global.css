@@ -1700,8 +1700,10 @@ input::placeholder {
 	}
 
 	.current-player-display {
-		flex-direction: column;
+		flex-direction: row;
 		gap: 15px;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.timer {
@@ -1777,7 +1779,16 @@ input::placeholder {
 	}
 
 	.current-player-card {
-		transform: scale(1.1);
+		transform: scale(1.05);
+	}
+
+	.current-player-display {
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+
+	.timer-section {
+		min-width: 120px;
 	}
 
 	.auction-content {
