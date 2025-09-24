@@ -21,6 +21,7 @@ const initialState = {
 	maxPlayers: 2,
 	currentPlayer: null,
 	timeRemaining: 30,
+	nominationTimeRemaining: 15,
 	availablePlayers: [],
 	currentNominator: null,
 	isNominating: false,
@@ -48,6 +49,8 @@ const auctionReducer = (state, action) => {
 			return { ...state, currentPlayer: action.payload };
 		case 'SET_TIME_REMAINING':
 			return { ...state, timeRemaining: action.payload };
+		case 'SET_NOMINATION_TIME_REMAINING':
+			return { ...state, nominationTimeRemaining: action.payload };
 		case 'SET_AVAILABLE_PLAYERS':
 			return { ...state, availablePlayers: action.payload };
 		case 'SET_CURRENT_NOMINATOR':
@@ -123,12 +126,26 @@ export const AuctionProvider = ({ children }) => {
 				payload: data.availablePlayers,
 			});
 			dispatch({ type: 'SET_CURRENT_NOMINATOR', payload: data.nominator });
+			dispatch({ type: 'SET_NOMINATION_TIME_REMAINING', payload: data.nominationTimeRemaining });
 		});
 
 		socket.on('waitingForNomination', (data) => {
 			console.log('Received waitingForNomination:', data);
 			dispatch({ type: 'SET_IS_NOMINATING', payload: false });
 			dispatch({ type: 'SET_CURRENT_NOMINATOR', payload: data.nominator });
+			dispatch({ type: 'SET_NOMINATION_TIME_REMAINING', payload: data.nominationTimeRemaining });
+		});
+
+		socket.on('nominationTimerUpdate', (nominationTimeRemaining) => {
+			dispatch({ type: 'SET_NOMINATION_TIME_REMAINING', payload: nominationTimeRemaining });
+		});
+
+		socket.on('playerAutoNominated', (data) => {
+			console.log('Player auto-nominated:', data);
+			dispatch({
+				type: 'SET_BID_STATUS',
+				payload: `${data.player.name} was auto-nominated for ${data.nominator} (time expired)`
+			});
 		});
 
 		socket.on('biddingStarted', (data) => {
@@ -249,6 +266,8 @@ export const AuctionProvider = ({ children }) => {
 			socket.off('waitingForNomination');
 			socket.off('biddingStarted');
 			socket.off('timerUpdate');
+			socket.off('nominationTimerUpdate');
+			socket.off('playerAutoNominated');
 			socket.off('bidPlaced');
 			socket.off('bidRejected');
 			socket.off('playerWon');

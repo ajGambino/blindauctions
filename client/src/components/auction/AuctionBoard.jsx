@@ -12,6 +12,7 @@ const AuctionBoard = () => {
 	const {
 		currentPlayer,
 		timeRemaining,
+		nominationTimeRemaining,
 		isBidding,
 		isNominating,
 		currentNominator,
@@ -69,6 +70,9 @@ const AuctionBoard = () => {
 						<div className='nomination-waiting'>
 							<h3>Waiting for Nomination</h3>
 							<p>{currentNominator} is selecting a player to nominate...</p>
+							<div className='timer-section'>
+								<Timer timeRemaining={nominationTimeRemaining} />
+							</div>
 							<div className='loading-dots'>
 								<span></span>
 								<span></span>

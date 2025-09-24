@@ -99,13 +99,14 @@ function requestNomination(gameId) {
 		return;
 	}
 
-	const { nominator, availablePlayers } = result;
+	const { nominator, availablePlayers, nominationTimeRemaining } = result;
 	console.log(`Requesting nomination from ${nominator.username} in game ${gameId}`);
 
 	// Send nomination request only to the nominator
 	io.to(nominator.id).emit('requestNomination', {
 		availablePlayers: availablePlayers,
 		nominator: nominator.username,
+		nominationTimeRemaining: nominationTimeRemaining
 	});
 
 	// Send waiting message to everyone EXCEPT the nominator
@@ -115,9 +116,45 @@ function requestNomination(gameId) {
 		if (user.id !== nominator.id) {
 			io.to(user.id).emit('waitingForNomination', {
 				nominator: nominator.username,
+				nominationTimeRemaining: nominationTimeRemaining
 			});
 		}
 	});
+
+	// Start nomination countdown timer
+	game.nominationTimer = setInterval(() => {
+		game.nominationTimeRemaining--;
+		io.to(gameId).emit('nominationTimerUpdate', game.nominationTimeRemaining);
+
+		if (game.nominationTimeRemaining <= 0) {
+			autoNominate(gameId);
+		}
+	}, 1000);
+}
+
+function autoNominate(gameId) {
+	const game = gameManager.getGame(gameId);
+	if (!game) return;
+
+	// Clear nomination timer
+	if (game.nominationTimer) {
+		clearInterval(game.nominationTimer);
+		game.nominationTimer = null;
+	}
+
+	const result = gameManager.autoNominate(gameId);
+	if (!result) return;
+
+	console.log(`Auto-nominated ${result.player.name} for ${result.nominator} in game ${gameId}`);
+
+	// Notify everyone about the auto-nomination
+	io.to(gameId).emit('playerAutoNominated', {
+		player: result.player,
+		nominator: result.nominator
+	});
+
+	// Start bidding for the auto-nominated player
+	startBidding(gameId, result.player);
 }
 
 function startBidding(gameId, player) {
@@ -252,6 +289,12 @@ io.on('connection', (socket) => {
 
 		const game = gameManager.getGame(gameId);
 		if (!game) return;
+
+		// Clear nomination timer since manual nomination was made
+		if (game.nominationTimer) {
+			clearInterval(game.nominationTimer);
+			game.nominationTimer = null;
+		}
 
 		const user = game.users.get(socket.id);
 		const userArray = Array.from(game.users.values());

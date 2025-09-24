@@ -15,6 +15,8 @@ export const SOCKET_EVENTS = {
 	WAITING_FOR_NOMINATION: 'waitingForNomination',
 	BIDDING_STARTED: 'biddingStarted',
 	TIMER_UPDATE: 'timerUpdate',
+	NOMINATION_TIMER_UPDATE: 'nominationTimerUpdate',
+	PLAYER_AUTO_NOMINATED: 'playerAutoNominated',
 	BID_PLACED: 'bidPlaced',
 	BID_REJECTED: 'bidRejected',
 	PLAYER_WON: 'playerWon',

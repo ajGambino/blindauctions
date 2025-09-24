@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuction } from '../../contexts/AuctionContext';
 import PlayerCard from './PlayerCard';
 import Button from '../common/Button';
+import Timer from '../common/Timer';
 
 const PlayerList = () => {
 	const [selectedPlayer, setSelectedPlayer] = useState(null);
@@ -12,6 +13,7 @@ const PlayerList = () => {
 		nominatePlayer,
 		isNominating: isInNominationPhase,
 		isBidding,
+		nominationTimeRemaining,
 	} = useAuction();
 
 	// Debug logging
@@ -81,6 +83,11 @@ const PlayerList = () => {
 	return (
 		<div className='nomination-section'>
 			<h3>Nominate a Player</h3>
+
+			{/* Nomination Timer */}
+			<div className='timer-section'>
+				<Timer timeRemaining={nominationTimeRemaining} />
+			</div>
 
 			{/* Position Tabs */}
 			<div className='position-tabs'>

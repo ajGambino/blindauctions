@@ -13,7 +13,9 @@ class GameManager {
       currentNominator: 0,
       bids: new Map(),
       timer: null,
-      timeRemaining: 30,
+      nominationTimer: null,
+      timeRemaining: 20,
+      nominationTimeRemaining: 15,
       auctionActive: false,
       gameStarted: false,
       playersAuctioned: 0,
@@ -34,8 +36,9 @@ class GameManager {
 
   deleteGame(gameId) {
     const game = this.games.get(gameId);
-    if (game && game.timer) {
-      clearInterval(game.timer);
+    if (game) {
+      if (game.timer) clearInterval(game.timer);
+      if (game.nominationTimer) clearInterval(game.nominationTimer);
     }
     this.games.delete(gameId);
     console.log(`Deleted game ${gameId}`);
@@ -113,11 +116,45 @@ class GameManager {
       return this.requestNomination(gameId);
     }
 
+    // Start nomination timer
+    game.nominationTimeRemaining = 15;
+
     return {
       type: 'nominate',
       nominator,
-      availablePlayers: game.availablePlayers
+      availablePlayers: game.availablePlayers,
+      nominationTimeRemaining: game.nominationTimeRemaining
     };
+  }
+
+  autoNominate(gameId) {
+    const game = this.getGame(gameId);
+    if (!game) return null;
+
+    const userArray = Array.from(game.users.values());
+    const nominator = userArray[game.currentNominator];
+    if (!nominator) return null;
+
+    // Find the first available player for a position the nominator doesn't have filled
+    const availablePositions = [];
+    if (!nominator.team.QB) availablePositions.push('QB');
+    if (!nominator.team.RB) availablePositions.push('RB');
+    if (nominator.team.WR.length < 2) availablePositions.push('WR');
+    if (!nominator.team.TE) availablePositions.push('TE');
+
+    // Find first player in any available position
+    for (const position of availablePositions) {
+      const player = game.availablePlayers.find(p => p.position === position);
+      if (player) {
+        return {
+          type: 'auto_nominate',
+          player,
+          nominator: nominator.username
+        };
+      }
+    }
+
+    return null;
   }
 
   startBidding(gameId, player) {
@@ -144,7 +181,7 @@ class GameManager {
 
     // Normal bidding process
     game.auctionActive = true;
-    game.timeRemaining = 30;
+    game.timeRemaining = 20;
 
     return {
       type: 'bidding',
@@ -215,7 +252,7 @@ class GameManager {
     const game = this.getGame(gameId);
     if (!game) return null;
 
-    clearInterval(game.timer);
+    if (game.timer) clearInterval(game.timer);
     game.auctionActive = false;
 
     let winner = null;
@@ -307,12 +344,17 @@ class GameManager {
       clearInterval(game.timer);
       game.timer = null;
     }
+    if (game.nominationTimer) {
+      clearInterval(game.nominationTimer);
+      game.nominationTimer = null;
+    }
 
     // Reset game state but keep users
     game.currentPlayer = null;
     game.currentNominator = 0;
     game.bids.clear();
-    game.timeRemaining = 30;
+    game.timeRemaining = 20;
+    game.nominationTimeRemaining = 15;
     game.auctionActive = false;
     game.gameStarted = false;
     game.playersAuctioned = 0;
