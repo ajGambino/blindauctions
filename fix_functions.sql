@@ -1,3 +1,6 @@
+-- Complete function recreation to fix status changes
+-- Run this entire file in Supabase SQL editor
+
 -- Function to create a new game
 CREATE OR REPLACE FUNCTION create_game(
   game_name TEXT,
@@ -107,7 +110,7 @@ BEGIN
   SET current_players = current_players - 1
   WHERE id = game_id;
 
-  -- If no players left, delete the game
+  -- If no players left, cancel the game
   UPDATE games
   SET status = 'cancelled'
   WHERE id = game_id AND current_players = 0;
@@ -146,6 +149,27 @@ BEGIN
   UPDATE games
   SET status = 'in_progress', started_at = NOW()
   WHERE id = game_id;
+
+  RETURN TRUE;
+END;
+$$;
+
+-- Function to end a game
+CREATE OR REPLACE FUNCTION end_game(game_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  -- Update the game status to completed
+  UPDATE games
+  SET status = 'completed', completed_at = NOW()
+  WHERE id = game_id;
+
+  -- Check if the update was successful
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Game not found';
+  END IF;
 
   RETURN TRUE;
 END;

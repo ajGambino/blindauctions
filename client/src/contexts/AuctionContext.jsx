@@ -202,9 +202,20 @@ export const AuctionProvider = ({ children }) => {
 			dispatch({ type: 'SET_CURRENT_NOMINATOR', payload: null });
 		});
 
-		socket.on('auctionComplete', (data) => {
+		socket.on('auctionComplete', async (data) => {
 			dispatch({ type: 'SET_GAME_STATE', payload: 'final' });
 			dispatch({ type: 'SET_FINAL_TEAMS', payload: data.finalTeams });
+
+			// Ensure game status is marked as completed in database
+			if (state.currentGameId) {
+				try {
+					const { gameService } = await import('../services/gameService');
+					await gameService.endGame(state.currentGameId);
+					console.log('Game marked as completed from client');
+				} catch (error) {
+					console.error('Failed to mark game as completed from client:', error);
+				}
+			}
 		});
 
 		socket.on('nominationRejected', (reason) => {
