@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -5,13 +6,21 @@ const path = require('path');
 const fs = require('fs');
 const csv = require('csv-parser');
 const gameManager = require('./server/gameManager');
+const { createClient } = require('@supabase/supabase-js');
+
+// Initialize Supabase client
+const supabase = createClient(
+	process.env.SUPABASE_URL,
+	process.env.SUPABASE_ANON_KEY
+);
 
 const app = express();
+app.use(express.json());
 const server = http.createServer(app);
 const io = socketIo(server, {
 	cors: {
 		origin:
-			process.env.NODE_ENV === 'production' ? false : ['http://localhost:5177'],
+			process.env.NODE_ENV === 'production' ? false : ['http://localhost:5177', 'http://localhost:5178'],
 		methods: ['GET', 'POST'],
 	},
 });
@@ -56,9 +65,17 @@ function loadPlayersFromCSV() {
 	});
 }
 
-function startAuction(gameId) {
+async function startAuction(gameId) {
 	const game = gameManager.getGame(gameId);
 	if (!game || !gameManager.startAuction(gameId)) return;
+
+	// Update database status to 'in_progress'
+	try {
+		await supabase.rpc('start_game', { game_id: gameId });
+		console.log(`Game ${gameId} status updated to 'in_progress'`);
+	} catch (error) {
+		console.error('Error updating game status to in_progress:', error);
+	}
 
 	const allUsers = Array.from(game.users.values());
 	io.to(gameId).emit('gameStarted', {
@@ -164,9 +181,17 @@ function endBidding(gameId) {
 	}
 }
 
-function endAuction(gameId) {
+async function endAuction(gameId) {
 	const game = gameManager.getGame(gameId);
 	if (!game) return;
+
+	// Update database status to 'completed'
+	try {
+		await supabase.rpc('end_game', { game_id: gameId });
+		console.log(`Game ${gameId} status updated to 'completed'`);
+	} catch (error) {
+		console.error('Error updating game status to completed:', error);
+	}
 
 	io.to(gameId).emit('auctionComplete', {
 		finalTeams: Array.from(game.users.values()),
@@ -177,17 +202,18 @@ io.on('connection', (socket) => {
 	console.log('User connected:', socket.id);
 
 	socket.on('joinAuction', (data) => {
-		const { gameId, username } = data;
+		const { gameId, username, gameSettings } = data;
 
 		// Check if game exists
 		let game = gameManager.getGame(gameId);
 		if (!game) {
-			// Create new game instance
-			game = gameManager.createGame(gameId, playerPool);
+			// Create new game instance with settings
+			const settings = gameSettings || { maxPlayers: 2, buyIn: 100 };
+			game = gameManager.createGame(gameId, playerPool, settings);
 		}
 
 		// Check if game is full
-		if (game.users.size >= 2) {
+		if (game.users.size >= game.maxPlayers) {
 			socket.emit('auctionFull');
 			return;
 		}
@@ -215,7 +241,7 @@ io.on('connection', (socket) => {
 			playersInLobby: game.users.size,
 		});
 
-		if (game.users.size === 2) {
+		if (game.users.size === game.maxPlayers) {
 			startAuction(gameId);
 		}
 	});
@@ -290,6 +316,33 @@ io.on('connection', (socket) => {
 			console.log('All eligible players have bid, ending auction early');
 			endBidding(gameId);
 		}
+	});
+
+	socket.on('leaveGame', () => {
+		const gameId = socketGameMap.get(socket.id);
+		if (!gameId) return;
+
+		console.log('User leaving game:', gameId, socket.id);
+
+		// Leave the socket room
+		socket.leave(gameId);
+
+		// Remove user from game
+		const game = gameManager.getGame(gameId);
+		if (game) {
+			const gameDeleted = gameManager.removeUserFromGame(gameId, socket.id);
+
+			if (!gameDeleted) {
+				// Notify remaining players
+				io.to(gameId).emit('userJoined', {
+					username: '',
+					playersInLobby: game.users.size,
+				});
+			}
+		}
+
+		socketGameMap.delete(socket.id);
+		socket.emit('leftGame');
 	});
 
 	socket.on('resetGame', () => {

@@ -1,7 +1,26 @@
 import { supabase } from '../lib/supabase'
 
 export const gameService = {
-  // Get all available games
+  // Get all games (including completed ones for history, excluding cancelled)
+  async getAllGames() {
+    const { data, error } = await supabase
+      .from('games')
+      .select(`
+        *,
+        game_players (
+          id,
+          username,
+          joined_at
+        )
+      `)
+      .neq('status', 'cancelled')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return data
+  },
+
+  // Get all available games (waiting and in-progress only)
   async getAvailableGames() {
     const { data, error } = await supabase
       .from('games')
@@ -21,10 +40,10 @@ export const gameService = {
   },
 
   // Create a new game
-  async createGame(gameName, maxPlayers = 2) {
+  async createGame(gameName, gameSettings = { buyIn: 100, maxPlayers: 2 }) {
     const { data, error } = await supabase.rpc('create_game', {
       game_name: gameName,
-      max_players_count: maxPlayers
+      game_settings: gameSettings
     })
 
     if (error) throw error
@@ -55,6 +74,16 @@ export const gameService = {
   // Start a game
   async startGame(gameId) {
     const { data, error } = await supabase.rpc('start_game', {
+      game_id: gameId
+    })
+
+    if (error) throw error
+    return data
+  },
+
+  // End a game
+  async endGame(gameId) {
+    const { data, error } = await supabase.rpc('end_game', {
       game_id: gameId
     })
 

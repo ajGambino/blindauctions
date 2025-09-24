@@ -57,10 +57,10 @@ function App() {
 	return (
 		<div className='app'>
 			<div className='container'>
-				<div className='header'>
-					<h1>🏈 Blind Auction</h1>
-					<p>2 Players • $100 Budget • 1 QB, 1 RB, 2 WR, 1 TE</p>
-				</div>
+				{/* <div className='header'>
+					<h1>🏈 Blind Auctions</h1>
+					<p>$100 Budget • 1 QB, 1 RB, 2 WR, 1 TE</p>
+				</div> */}
 
 				{renderCurrentScreen()}
 

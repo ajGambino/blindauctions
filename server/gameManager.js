@@ -5,7 +5,7 @@ class GameManager {
     this.games = new Map();
   }
 
-  createGame(gameId, playerPool) {
+  createGame(gameId, playerPool, gameSettings = { maxPlayers: 2, buyIn: 100 }) {
     const gameState = {
       id: gameId,
       users: new Map(),
@@ -19,10 +19,12 @@ class GameManager {
       playersAuctioned: 0,
       totalPlayers: playerPool.length,
       availablePlayers: [...playerPool],
+      maxPlayers: gameSettings.maxPlayers || 2,
+      buyIn: gameSettings.buyIn || 100,
     };
 
     this.games.set(gameId, gameState);
-    console.log(`Created game ${gameId} with ${playerPool.length} players`);
+    console.log(`Created game ${gameId} with max ${gameState.maxPlayers} players and ${gameState.buyIn} buy-in`);
     return gameState;
   }
 
@@ -46,7 +48,7 @@ class GameManager {
     const user = {
       id: socketId,
       username,
-      budget: 100,
+      budget: game.buyIn, // Use the game's buy-in amount as starting budget
       team: {
         QB: null,
         RB: null,
@@ -83,7 +85,7 @@ class GameManager {
 
   startAuction(gameId) {
     const game = this.getGame(gameId);
-    if (!game || game.users.size !== 2) return false;
+    if (!game || game.users.size !== game.maxPlayers) return false;
 
     game.gameStarted = true;
     game.auctionActive = false;
@@ -95,7 +97,7 @@ class GameManager {
     if (!game) return null;
 
     const userArray = Array.from(game.users.values());
-    if (userArray.length < 2) return null;
+    if (userArray.length < game.maxPlayers) return null;
 
     const nominator = userArray[game.currentNominator];
     if (!nominator) return null;
@@ -316,9 +318,9 @@ class GameManager {
     game.playersAuctioned = 0;
     game.availablePlayers = [...playerPool];
 
-    // Reset all users
+    // Reset all users with the game's buy-in amount
     game.users.forEach(user => {
-      user.budget = 100;
+      user.budget = game.buyIn;
       user.team = {
         QB: null,
         RB: null,

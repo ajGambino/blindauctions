@@ -1,8 +1,18 @@
 import React from 'react';
 import { useAuction } from '../../contexts/AuctionContext';
+import Button from '../common/Button';
 
 const WaitingRoom = () => {
-	const { playersInLobby, currentUser } = useAuction();
+	const { playersInLobby, maxPlayers, currentUser, returnToLobby } = useAuction();
+
+	const getBuyInLabel = (budget) => {
+		switch(budget) {
+			case 100: return '1 🍌'
+			case 300: return '3 🍌'
+			case 500: return '5 🍌'
+			default: return `${budget / 100} 🍌`
+		}
+	};
 
 	return (
 		<div className='screen'>
@@ -12,7 +22,7 @@ const WaitingRoom = () => {
 					<div className='player-count'>
 						<span className='count'>{playersInLobby}</span>
 						<span className='separator'>/</span>
-						<span className='total'>2</span>
+						<span className='total'>{maxPlayers}</span>
 					</div>
 					<p>Players in lobby</p>
 				</div>
@@ -22,16 +32,29 @@ const WaitingRoom = () => {
 						<p>
 							Welcome, <strong>{currentUser.username}</strong>!
 						</p>
+						<p className='game-settings'>
+							Buy-in: {getBuyInLabel(currentUser.budget)}
+						</p>
 					</div>
 				)}
 
 				<div className='waiting-message'>
-					<p>Auction will start automatically when 2 players join</p>
+					<p>Waiting for more players to join...</p>
 					<div className='loading-dots'>
 						<span></span>
 						<span></span>
 						<span></span>
 					</div>
+				</div>
+
+				<div className='waiting-actions'>
+					<Button
+						onClick={returnToLobby}
+						variant="secondary"
+						size="small"
+					>
+						Leave Game
+					</Button>
 				</div>
 			</div>
 		</div>

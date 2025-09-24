@@ -18,6 +18,7 @@ const initialState = {
 	currentUser: null,
 	allUsers: [],
 	playersInLobby: 0,
+	maxPlayers: 2,
 	currentPlayer: null,
 	timeRemaining: 30,
 	availablePlayers: [],
@@ -41,6 +42,8 @@ const auctionReducer = (state, action) => {
 			return { ...state, allUsers: action.payload };
 		case 'SET_PLAYERS_IN_LOBBY':
 			return { ...state, playersInLobby: action.payload };
+		case 'SET_MAX_PLAYERS':
+			return { ...state, maxPlayers: action.payload };
 		case 'SET_CURRENT_PLAYER':
 			return { ...state, currentPlayer: action.payload };
 		case 'SET_TIME_REMAINING':
@@ -220,6 +223,11 @@ export const AuctionProvider = ({ children }) => {
 			dispatch({ type: 'SET_GAME_STATE', payload: 'lobby' });
 		});
 
+		socket.on('leftGame', () => {
+			dispatch({ type: 'RESET_GAME' });
+			dispatch({ type: 'SET_GAME_STATE', payload: 'lobby' });
+		});
+
 		return () => {
 			socket.off('joinedAuction');
 			socket.off('userJoined');
@@ -238,23 +246,59 @@ export const AuctionProvider = ({ children }) => {
 			socket.off('nominationRejected');
 			socket.off('userLeft');
 			socket.off('gameReset');
+			socket.off('leftGame');
 		};
 	}, [socket, state.currentUser]);
 
 	// Actions
-	const joinAuction = (gameId) => {
+	const joinAuction = async (gameId) => {
 		if (socket && user && gameId) {
-			// Use the user's email as the username, or you can extract the part before @ if preferred
-			const username = user.email.split('@')[0];
-			dispatch({ type: 'SET_CURRENT_GAME_ID', payload: gameId });
-			dispatch({ type: 'SET_GAME_STATE', payload: 'waiting' });
-			socket.emit('joinAuction', { gameId, username });
+			try {
+				// Get game data including settings from database
+				const { gameService } = await import('../services/gameService');
+				const games = await gameService.getAvailableGames();
+				const gameData = games.find(g => g.id === gameId);
+
+				const username = user.email.split('@')[0];
+				dispatch({ type: 'SET_CURRENT_GAME_ID', payload: gameId });
+				dispatch({ type: 'SET_GAME_STATE', payload: 'waiting' });
+
+				// Include game settings when joining via socket
+				const gameSettings = gameData?.settings || { maxPlayers: 2, buyIn: 100 };
+				dispatch({ type: 'SET_MAX_PLAYERS', payload: gameSettings.maxPlayers });
+				socket.emit('joinAuction', { gameId, username, gameSettings });
+			} catch (error) {
+				console.error('Error joining auction:', error);
+				// Fallback to original behavior
+				const username = user.email.split('@')[0];
+				dispatch({ type: 'SET_CURRENT_GAME_ID', payload: gameId });
+				dispatch({ type: 'SET_GAME_STATE', payload: 'waiting' });
+				socket.emit('joinAuction', { gameId, username });
+			}
 		}
 	};
 
-	const returnToLobby = () => {
-		dispatch({ type: 'RESET_GAME' });
-		dispatch({ type: 'SET_GAME_STATE', payload: 'lobby' });
+	const returnToLobby = async () => {
+		try {
+			// Leave the current game if we're in one
+			if (state.currentGameId && user) {
+				// Emit socket event to leave game room
+				if (socket) {
+					socket.emit('leaveGame');
+				}
+
+				// Only call leaveGame if game is not in final state (completed)
+				if (state.gameState !== 'final') {
+					const { gameService } = await import('../services/gameService');
+					await gameService.leaveGame(state.currentGameId);
+				}
+			}
+		} catch (error) {
+			console.error('Error leaving game:', error);
+		} finally {
+			dispatch({ type: 'RESET_GAME' });
+			dispatch({ type: 'SET_GAME_STATE', payload: 'lobby' });
+		}
 	};
 
 	const nominatePlayer = (playerId) => {
