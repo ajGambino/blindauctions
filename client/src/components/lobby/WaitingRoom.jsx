@@ -3,7 +3,7 @@ import { useAuction } from '../../contexts/AuctionContext';
 import Button from '../common/Button';
 
 const WaitingRoom = () => {
-	const { playersInLobby, maxPlayers, currentUser, returnToLobby } = useAuction();
+	const { playersInLobby, maxPlayers, currentUser, gameBuyIn, returnToLobby } = useAuction();
 
 	const getBuyInLabel = (budget) => {
 		switch(budget) {
@@ -33,7 +33,7 @@ const WaitingRoom = () => {
 							Welcome, <strong>{currentUser.username}</strong>!
 						</p>
 						<p className='game-settings'>
-							Buy-in: {getBuyInLabel(currentUser.budget)}
+							Buy-in: {getBuyInLabel(gameBuyIn)}
 						</p>
 					</div>
 				)}

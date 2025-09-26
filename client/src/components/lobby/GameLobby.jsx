@@ -162,6 +162,10 @@ const GameLobby = ({ onJoinGame }) => {
 		<div className='screen'>
 			<div className='game-lobby'>
 				<div className='lobby-header'>
+					<div className='header'>
+						<h1>🏈 Blind Auctions</h1>
+						<p>$100 Budget • 1 QB, 1 RB, 2 WR, 1 TE</p>
+					</div>
 					<p>
 						Welcome, <strong>{user?.email.split('@')[0]}</strong>!
 					</p>

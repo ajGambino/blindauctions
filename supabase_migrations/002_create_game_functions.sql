@@ -130,11 +130,11 @@ BEGIN
   SELECT current_players, max_players
   INTO current_player_count, max_players_count
   FROM games
-  WHERE id = game_id AND created_by = auth.uid();
+  WHERE id = game_id;
 
-  -- Check if game exists and user is the creator
+  -- Check if game exists
   IF NOT FOUND THEN
-    RAISE EXCEPTION 'Game not found or user not authorized';
+    RAISE EXCEPTION 'Game not found';
   END IF;
 
   -- Check if enough players

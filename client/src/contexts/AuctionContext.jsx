@@ -19,6 +19,7 @@ const initialState = {
 	allUsers: [],
 	playersInLobby: 0,
 	maxPlayers: 2,
+	gameBuyIn: 100,
 	currentPlayer: null,
 	timeRemaining: 30,
 	nominationTimeRemaining: 15,
@@ -45,6 +46,8 @@ const auctionReducer = (state, action) => {
 			return { ...state, playersInLobby: action.payload };
 		case 'SET_MAX_PLAYERS':
 			return { ...state, maxPlayers: action.payload };
+		case 'SET_GAME_BUY_IN':
+			return { ...state, gameBuyIn: action.payload };
 		case 'SET_CURRENT_PLAYER':
 			return { ...state, currentPlayer: action.payload };
 		case 'SET_TIME_REMAINING':
@@ -296,6 +299,7 @@ export const AuctionProvider = ({ children }) => {
 				// Include game settings when joining via socket
 				const gameSettings = gameData?.settings || { maxPlayers: 2, buyIn: 100 };
 				dispatch({ type: 'SET_MAX_PLAYERS', payload: gameSettings.maxPlayers });
+				dispatch({ type: 'SET_GAME_BUY_IN', payload: gameSettings.buyIn });
 				socket.emit('joinAuction', { gameId, username, gameSettings });
 			} catch (error) {
 				console.error('Error joining auction:', error);
