@@ -147,6 +147,11 @@ const GameLobby = ({ onJoinGame }) => {
 		return game.status === 'waiting' && game.current_players < game.max_players;
 	};
 
+	const isUserInGame = (game) => {
+		if (!user || !game.game_players) return false;
+		return game.game_players.some(player => player.user_id === user.id);
+	};
+
 	const handleViewResults = async (gameId) => {
 		try {
 			setLoadingResults(true);
@@ -338,6 +343,10 @@ const GameLobby = ({ onJoinGame }) => {
 										{game.status === 'completed' ? (
 											<Button onClick={() => handleViewResults(game.id)} disabled={loadingResults}>
 												{loadingResults ? 'Loading...' : 'View Results'}
+											</Button>
+										) : game.status === 'in_progress' && isUserInGame(game) ? (
+											<Button onClick={() => handleJoinGame(game.id)}>
+												Rejoin Game
 											</Button>
 										) : (
 											<Button disabled>

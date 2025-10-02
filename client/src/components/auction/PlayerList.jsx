@@ -14,6 +14,7 @@ const PlayerList = () => {
 		isNominating: isInNominationPhase,
 		isBidding,
 		nominationTimeRemaining,
+		currentUser,
 	} = useAuction();
 
 	// Debug logging
@@ -53,18 +54,32 @@ const PlayerList = () => {
 		}, {});
 	};
 
-	// Ensure activeTab is valid, default to first available position
+	// Ensure activeTab is valid, default to first available position that user needs
 	React.useEffect(() => {
-		if (availablePlayers && availablePlayers.length > 0) {
+		if (availablePlayers && availablePlayers.length > 0 && currentUser) {
 			const groupedPlayers = groupPlayersByPosition(availablePlayers);
 			const positions = ['QB', 'RB', 'WR', 'TE'];
-			const availablePositions = positions.filter(pos => groupedPlayers[pos]?.length > 0);
 
+			// Filter positions that have available players AND user still needs
+			const availablePositions = positions.filter(pos => {
+				if (!groupedPlayers[pos] || groupedPlayers[pos].length === 0) {
+					return false;
+				}
+
+				// Check if user needs this position
+				if (pos === 'QB') return !currentUser.team.QB;
+				if (pos === 'RB') return !currentUser.team.RB;
+				if (pos === 'WR') return currentUser.team.WR.length < 2;
+				if (pos === 'TE') return !currentUser.team.TE;
+				return true;
+			});
+
+			// If current tab is not in available positions, switch to first available
 			if (availablePositions.length > 0 && !availablePositions.includes(activeTab)) {
 				setActiveTab(availablePositions[0]);
 			}
 		}
-	}, [availablePlayers, activeTab]);
+	}, [availablePlayers, activeTab, currentUser]);
 
 	if (!isInNominationPhase || isBidding) {
 		console.log('Not in nomination phase or bidding active, returning null');

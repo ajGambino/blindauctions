@@ -1208,17 +1208,34 @@ input::placeholder {
 .nomination-section {
 	margin: 15px 0;
 	display: grid;
-	grid-template-rows: auto auto 1fr auto;
-	height: 55vh;
-	max-height: 450px;
-	gap: 12px;
+	grid-template-rows: auto auto auto 1fr auto;
+	height: 60vh;
+	max-height: 500px;
+	gap: 8px;
 }
 
 .nomination-section h3 {
 	margin: 0;
 	text-align: center;
 	color: #6366f1;
-	font-size: 1.3em;
+	font-size: 1.1em;
+}
+
+.nomination-section .timer-section {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.nomination-section .timer {
+	width: 80px;
+	height: 80px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1.8em;
+	margin: 0;
+	padding: 0;
 }
 
 .player-groups {
@@ -1266,7 +1283,7 @@ input::placeholder {
 /* Position Tabs */
 .position-tabs {
 	display: flex;
-	gap: 8px;
+	gap: 6px;
 	justify-content: center;
 	margin: 0;
 }
@@ -1274,13 +1291,13 @@ input::placeholder {
 .position-tab {
 	background: rgba(0, 0, 0, 0.3);
 	border: 2px solid rgba(255, 255, 255, 0.15);
-	border-radius: 8px;
-	padding: 8px 16px;
+	border-radius: 6px;
+	padding: 6px 12px;
 	color: #e5e5e5;
 	cursor: pointer;
 	transition: all 0.3s ease;
 	font-weight: 500;
-	font-size: 0.9em;
+	font-size: 0.85em;
 	font-family: inherit;
 }
 
@@ -1299,9 +1316,14 @@ input::placeholder {
 .nomination-actions {
 	text-align: center;
 	background: rgba(0, 0, 0, 0.2);
-	padding: 15px;
-	border-radius: 10px;
+	padding: 10px;
+	border-radius: 8px;
 	border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nomination-actions p {
+	margin-top: 8px;
+	font-size: 0.9em;
 }
 
 .nomination-waiting {
