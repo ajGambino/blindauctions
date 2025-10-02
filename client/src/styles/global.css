@@ -1462,6 +1462,20 @@ input::placeholder {
 	font-weight: bold;
 }
 
+.disconnected-badge {
+	background: #ef4444;
+	color: white;
+	padding: 2px 6px;
+	border-radius: 8px;
+	font-size: 0.7em;
+	font-weight: bold;
+}
+
+.user-team.disconnected {
+	opacity: 0.6;
+	border-color: rgba(239, 68, 68, 0.3);
+}
+
 .user-stats {
 	display: flex;
 	gap: 12px;

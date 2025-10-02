@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { gameService } from '../../services/gameService';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
+import PlayerCard from '../auction/PlayerCard';
 
 const GameLobby = ({ onJoinGame }) => {
 	const [allGames, setAllGames] = useState([]);
@@ -14,6 +15,9 @@ const GameLobby = ({ onJoinGame }) => {
 	const [selectedBuyIn, setSelectedBuyIn] = useState(100); // Default 1 banana = 100
 	const [selectedPlayerCount, setSelectedPlayerCount] = useState(2);
 	const [creating, setCreating] = useState(false);
+	const [showResultsModal, setShowResultsModal] = useState(false);
+	const [selectedGameResults, setSelectedGameResults] = useState(null);
+	const [loadingResults, setLoadingResults] = useState(false);
 	const { user, signOut } = useAuth();
 
 	useEffect(() => {
@@ -141,6 +145,35 @@ const GameLobby = ({ onJoinGame }) => {
 
 	const canJoinGame = (game) => {
 		return game.status === 'waiting' && game.current_players < game.max_players;
+	};
+
+	const handleViewResults = async (gameId) => {
+		try {
+			setLoadingResults(true);
+			setError(null);
+			const results = await gameService.getGameResults(gameId);
+			setSelectedGameResults(results);
+			setShowResultsModal(true);
+		} catch (err) {
+			console.error('Error loading game results:', err);
+			setError('Failed to load game results');
+		} finally {
+			setLoadingResults(false);
+		}
+	};
+
+	const getAllPlayers = (team) => {
+		const players = [];
+		if (team.team?.QB) players.push(team.team.QB);
+		if (team.team?.RB) players.push(team.team.RB);
+		if (team.team?.WR) players.push(...team.team.WR);
+		if (team.team?.TE) players.push(team.team.TE);
+		return players;
+	};
+
+	const getTotalProjection = (team) => {
+		const players = getAllPlayers(team);
+		return players.reduce((total, player) => total + (player.projection || 0), 0).toFixed(1);
 	};
 
 	if (loading) {
@@ -303,7 +336,9 @@ const GameLobby = ({ onJoinGame }) => {
 
 									<div className='game-actions'>
 										{game.status === 'completed' ? (
-											<Button disabled>Game Completed</Button>
+											<Button onClick={() => handleViewResults(game.id)} disabled={loadingResults}>
+												{loadingResults ? 'Loading...' : 'View Results'}
+											</Button>
 										) : (
 											<Button disabled>
 												{game.status === 'in_progress'
@@ -381,6 +416,60 @@ const GameLobby = ({ onJoinGame }) => {
 									disabled={creating}
 								>
 									Cancel
+								</Button>
+							</div>
+						</div>
+					</Modal>
+				)}
+
+				{showResultsModal && selectedGameResults && (
+					<Modal onClose={() => setShowResultsModal(false)}>
+						<div className='final-results'>
+							<h2>🏆 Game Results</h2>
+							<p className='results-subtitle'>{selectedGameResults.name}</p>
+
+							<div className='team-grid'>
+								{selectedGameResults.game_players?.map((team) => (
+									<div
+										key={team.id}
+										className='team-card'
+									>
+										<div className='team-header'>
+											<h4 className='team-owner'>
+												{team.username}
+											</h4>
+											<div className='team-stats'>
+												<div className='team-budget'>
+													Budget: <strong>${team.budget}</strong>
+												</div>
+												<div className='team-projection'>
+													Total Projection: <strong>{getTotalProjection(team)}</strong>
+												</div>
+											</div>
+										</div>
+
+										<div className='team-roster'>
+											{getAllPlayers(team).length > 0 ? (
+												getAllPlayers(team).map((player, idx) => (
+													<PlayerCard
+														key={idx}
+														player={player}
+														className="roster-card"
+													/>
+												))
+											) : (
+												<p style={{ textAlign: 'center', opacity: 0.7, padding: '20px' }}>
+													No players drafted
+												</p>
+											)}
+										</div>
+									</div>
+								))}
+							</div>
+
+							<div className='modal-actions' style={{ marginTop: '20px' }}>
+								<Button onClick={() => setShowResultsModal(false)}>
+									Close
 								</Button>
 							</div>
 						</div>

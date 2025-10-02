@@ -189,5 +189,28 @@ export const gameService = {
 
     if (error) throw error
     return data
+  },
+
+  // Get completed game results with all player teams
+  async getGameResults(gameId) {
+    const { data, error } = await supabase
+      .from('games')
+      .select(`
+        *,
+        game_players (
+          id,
+          user_id,
+          username,
+          budget,
+          team,
+          players_owned
+        )
+      `)
+      .eq('id', gameId)
+      .eq('status', 'completed')
+      .single()
+
+    if (error) throw error
+    return data
   }
 }

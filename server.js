@@ -102,6 +102,13 @@ function requestNomination(gameId) {
 	const { nominator, availablePlayers, nominationTimeRemaining } = result;
 	console.log(`Requesting nomination from ${nominator.username} in game ${gameId}`);
 
+	// If nominator is disconnected, auto-nominate immediately
+	if (nominator.disconnected) {
+		console.log(`Nominator ${nominator.username} is disconnected, auto-nominating...`);
+		setTimeout(() => autoNominate(gameId), 1000);
+		return;
+	}
+
 	// Send nomination request only to the nominator
 	io.to(nominator.id).emit('requestNomination', {
 		availablePlayers: availablePlayers,
@@ -249,15 +256,51 @@ io.on('connection', (socket) => {
 			game = gameManager.createGame(gameId, playerPool, settings);
 		}
 
+		// Check for reconnection - find disconnected user with same username
+		if (game.gameStarted) {
+			let reconnectedUser = null;
+			let oldSocketId = null;
+
+			for (const [socketId, user] of game.users.entries()) {
+				if (user.username === username && user.disconnected) {
+					reconnectedUser = user;
+					oldSocketId = socketId;
+					break;
+				}
+			}
+
+			if (reconnectedUser && oldSocketId) {
+				// Reconnect existing user
+				socket.join(gameId);
+				const user = gameManager.reconnectUserToGame(gameId, oldSocketId, socket.id);
+
+				// Update socket mapping
+				socketGameMap.delete(oldSocketId);
+				socketGameMap.set(socket.id, gameId);
+
+				socket.emit('reconnected', {
+					user: user,
+					users: Array.from(game.users.values()),
+					gameState: {
+						currentPlayer: game.currentPlayer,
+						auctionActive: game.auctionActive,
+						timeRemaining: game.timeRemaining,
+						currentNominator: game.currentNominator,
+					},
+				});
+
+				console.log(`User ${username} reconnected to game ${gameId}`);
+				return;
+			} else {
+				// Game already in progress, can't join as new player
+				socket.emit('gameInProgress');
+				return;
+			}
+		}
+
 		// Check if game is full
 		if (game.users.size >= game.maxPlayers) {
 			socket.emit('auctionFull');
-			return;
-		}
-
-		// Check if game has started
-		if (game.gameStarted) {
-			socket.emit('gameInProgress');
 			return;
 		}
 
@@ -343,10 +386,13 @@ io.on('connection', (socket) => {
 
 		socket.emit('bidPlaced', result.amount);
 
-		// Check if all eligible players have bid
+		// Check if all eligible connected players have bid
 		const game = gameManager.getGame(gameId);
 		const totalBids = game.bids.size;
-		const eligiblePlayers = Array.from(game.users.values()).filter((user) => {
+		const eligibleConnectedPlayers = Array.from(game.users.values()).filter((user) => {
+			// Skip disconnected users
+			if (user.disconnected) return false;
+
 			const position = game.currentPlayer.position;
 			if (position === 'QB' && user.team.QB) return false;
 			if (position === 'RB' && user.team.RB) return false;
@@ -355,8 +401,8 @@ io.on('connection', (socket) => {
 			return true;
 		}).length;
 
-		if (totalBids >= eligiblePlayers && eligiblePlayers > 0) {
-			console.log('All eligible players have bid, ending auction early');
+		if (totalBids >= eligibleConnectedPlayers && eligibleConnectedPlayers > 0) {
+			console.log('All eligible connected players have bid, ending auction early');
 			endBidding(gameId);
 		}
 	});
@@ -406,12 +452,22 @@ io.on('connection', (socket) => {
 			if (game) {
 				const gameDeleted = gameManager.removeUserFromGame(gameId, socket.id);
 
-				if (!gameDeleted && game.users.size < 2 && game.gameStarted) {
-					// Handle user leaving mid-game
-					io.to(gameId).emit('userLeft', 'A user left the game');
+				// Only notify if user left before game started and game wasn't deleted
+				if (!gameDeleted && !game.gameStarted) {
+					io.to(gameId).emit('userJoined', {
+						username: '',
+						playersInLobby: game.users.size,
+					});
 				}
+
+				// If user disconnected during active game, they're marked as disconnected
+				// Game will continue and auto-timeout their decisions
 			}
-			socketGameMap.delete(socket.id);
+
+			// Keep socket mapping for potential reconnection during active games
+			if (!game || !game.gameStarted) {
+				socketGameMap.delete(socket.id);
+			}
 		}
 	});
 });

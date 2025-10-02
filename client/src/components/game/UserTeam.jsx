@@ -56,11 +56,12 @@ const UserTeam = () => {
 				const isCurrentUser = user.id === currentUser.id;
 
 				return (
-					<div key={user.id} className={`user-team ${isCurrentUser ? 'current-user' : ''}`}>
+					<div key={user.id} className={`user-team ${isCurrentUser ? 'current-user' : ''} ${user.disconnected ? 'disconnected' : ''}`}>
 						<div className='user-header'>
 							<div className='user-name'>
 								{user.username}
 								{isCurrentUser && <span className='you-badge'>You</span>}
+								{user.disconnected && <span className='disconnected-badge'>Disconnected</span>}
 							</div>
 							<div className='user-stats'>
 								<span className='budget'>${user.budget}</span>

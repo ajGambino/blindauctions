@@ -61,6 +61,7 @@ class GameManager {
 				TE: null,
 			},
 			playersOwned: 0,
+			disconnected: false,
 		};
 
 		game.users.set(socketId, user);
@@ -71,15 +72,46 @@ class GameManager {
 		const game = this.getGame(gameId);
 		if (!game) return false;
 
-		game.users.delete(socketId);
+		// If game hasn't started, remove the user completely
+		if (!game.gameStarted) {
+			game.users.delete(socketId);
 
-		// If no users left, clean up the game
-		if (game.users.size === 0) {
-			this.deleteGame(gameId);
-			return true;
+			// If no users left, clean up the game
+			if (game.users.size === 0) {
+				this.deleteGame(gameId);
+				return true;
+			}
+
+			return false;
+		}
+
+		// If game has started, mark as disconnected instead of removing
+		const user = game.users.get(socketId);
+		if (user) {
+			user.disconnected = true;
+			console.log(`User ${user.username} marked as disconnected in game ${gameId}`);
 		}
 
 		return false;
+	}
+
+	reconnectUserToGame(gameId, oldSocketId, newSocketId) {
+		const game = this.getGame(gameId);
+		if (!game) return null;
+
+		const user = game.users.get(oldSocketId);
+		if (!user) return null;
+
+		// Update socket ID and mark as reconnected
+		user.id = newSocketId;
+		user.disconnected = false;
+
+		// Move user to new socket ID in the map
+		game.users.delete(oldSocketId);
+		game.users.set(newSocketId, user);
+
+		console.log(`User ${user.username} reconnected with new socket ID in game ${gameId}`);
+		return user;
 	}
 
 	canUserAffordBid(user, bidAmount) {
