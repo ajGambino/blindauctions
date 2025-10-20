@@ -9,6 +9,7 @@ export const gameService = {
         *,
         game_players (
           id,
+          user_id,
           username,
           joined_at
         )

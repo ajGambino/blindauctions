@@ -7,11 +7,11 @@
 
 /* Prevent iOS zoom on input focus - More comprehensive */
 @supports (-webkit-touch-callout: none) {
-	input[type="text"],
-	input[type="number"],
-	input[type="email"],
-	input[type="password"],
-	input[type="search"],
+	input[type='text'],
+	input[type='number'],
+	input[type='email'],
+	input[type='password'],
+	input[type='search'],
 	select,
 	textarea,
 	button,
@@ -49,7 +49,8 @@ html {
 
 /* Force initial scale on mobile browsers */
 @media screen and (max-width: 768px) {
-	html, body {
+	html,
+	body {
 		width: 100% !important;
 		height: 100% !important;
 		margin: 0 !important;
@@ -66,7 +67,8 @@ html {
 }
 
 body {
-	font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+		sans-serif;
 	background: linear-gradient(135deg, #1a1a1a 0%, #2d1b69 100%);
 	color: #e5e5e5;
 	min-height: 100vh;
@@ -88,6 +90,12 @@ body {
 
 .container {
 	width: 100%;
+}
+
+/* Logo */
+
+.logo {
+	height: 5rem;
 }
 
 /* Header */

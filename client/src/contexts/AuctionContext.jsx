@@ -110,6 +110,31 @@ export const AuctionProvider = ({ children }) => {
 			});
 		});
 
+		socket.on('reconnected', (data) => {
+			console.log('Reconnected to game:', data);
+			dispatch({ type: 'SET_CURRENT_USER', payload: data.user });
+			dispatch({ type: 'SET_ALL_USERS', payload: data.users });
+			dispatch({ type: 'SET_GAME_STATE', payload: 'game' });
+
+			// Restore game state
+			if (data.gameState) {
+				if (data.gameState.currentPlayer) {
+					dispatch({ type: 'SET_CURRENT_PLAYER', payload: data.gameState.currentPlayer });
+				}
+				if (data.gameState.auctionActive) {
+					dispatch({ type: 'SET_IS_BIDDING', payload: true });
+					dispatch({ type: 'SET_TIME_REMAINING', payload: data.gameState.timeRemaining });
+				}
+				if (data.gameState.currentNominator !== undefined) {
+					const users = data.users || [];
+					const nominator = users[data.gameState.currentNominator];
+					if (nominator) {
+						dispatch({ type: 'SET_CURRENT_NOMINATOR', payload: nominator.username });
+					}
+				}
+			}
+		});
+
 		socket.on('gameStarted', (data) => {
 			dispatch({ type: 'SET_GAME_STATE', payload: 'game' });
 			dispatch({
@@ -264,6 +289,7 @@ export const AuctionProvider = ({ children }) => {
 			socket.off('userJoined');
 			socket.off('auctionFull');
 			socket.off('gameInProgress');
+			socket.off('reconnected');
 			socket.off('gameStarted');
 			socket.off('requestNomination');
 			socket.off('waitingForNomination');

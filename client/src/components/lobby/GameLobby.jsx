@@ -149,7 +149,7 @@ const GameLobby = ({ onJoinGame }) => {
 
 	const isUserInGame = (game) => {
 		if (!user || !game.game_players) return false;
-		return game.game_players.some(player => player.user_id === user.id);
+		return game.game_players.some((player) => player.user_id === user.id);
 	};
 
 	const handleViewResults = async (gameId) => {
@@ -178,7 +178,9 @@ const GameLobby = ({ onJoinGame }) => {
 
 	const getTotalProjection = (team) => {
 		const players = getAllPlayers(team);
-		return players.reduce((total, player) => total + (player.projection || 0), 0).toFixed(1);
+		return players
+			.reduce((total, player) => total + (player.projection || 0), 0)
+			.toFixed(1);
 	};
 
 	if (loading) {
@@ -200,8 +202,9 @@ const GameLobby = ({ onJoinGame }) => {
 		<div className='screen'>
 			<div className='game-lobby'>
 				<div className='lobby-header'>
+					<img src='bidequity.png' className='logo' />
 					<div className='header'>
-						<h1>🏈 Blind Auctions</h1>
+						<h3>Blind Auctions</h3>
 						<p>$100 Budget • 1 QB, 1 RB, 2 WR, 1 TE</p>
 					</div>
 					<p>
@@ -341,7 +344,10 @@ const GameLobby = ({ onJoinGame }) => {
 
 									<div className='game-actions'>
 										{game.status === 'completed' ? (
-											<Button onClick={() => handleViewResults(game.id)} disabled={loadingResults}>
+											<Button
+												onClick={() => handleViewResults(game.id)}
+												disabled={loadingResults}
+											>
 												{loadingResults ? 'Loading...' : 'View Results'}
 											</Button>
 										) : game.status === 'in_progress' && isUserInGame(game) ? (
@@ -439,20 +445,16 @@ const GameLobby = ({ onJoinGame }) => {
 
 							<div className='team-grid'>
 								{selectedGameResults.game_players?.map((team) => (
-									<div
-										key={team.id}
-										className='team-card'
-									>
+									<div key={team.id} className='team-card'>
 										<div className='team-header'>
-											<h4 className='team-owner'>
-												{team.username}
-											</h4>
+											<h4 className='team-owner'>{team.username}</h4>
 											<div className='team-stats'>
 												<div className='team-budget'>
 													Budget: <strong>${team.budget}</strong>
 												</div>
 												<div className='team-projection'>
-													Total Projection: <strong>{getTotalProjection(team)}</strong>
+													Total Projection:{' '}
+													<strong>{getTotalProjection(team)}</strong>
 												</div>
 											</div>
 										</div>
@@ -463,11 +465,17 @@ const GameLobby = ({ onJoinGame }) => {
 													<PlayerCard
 														key={idx}
 														player={player}
-														className="roster-card"
+														className='roster-card'
 													/>
 												))
 											) : (
-												<p style={{ textAlign: 'center', opacity: 0.7, padding: '20px' }}>
+												<p
+													style={{
+														textAlign: 'center',
+														opacity: 0.7,
+														padding: '20px',
+													}}
+												>
 													No players drafted
 												</p>
 											)}
