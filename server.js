@@ -8,10 +8,11 @@ const csv = require('csv-parser');
 const gameManager = require('./server/gameManager');
 const { createClient } = require('@supabase/supabase-js');
 
-// Initialize Supabase client
+// Initialize Supabase client with service role key for server-side operations
+// Service role key bypasses RLS policies, which is needed for the server to update game data
 const supabase = createClient(
 	process.env.SUPABASE_URL,
-	process.env.SUPABASE_ANON_KEY
+	process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 const app = express();
@@ -229,10 +230,43 @@ async function endAuction(gameId) {
 	const game = gameManager.getGame(gameId);
 	if (!game) return;
 
-	// Update database status to 'completed'
+	// Update database status to 'completed' and save team data
 	try {
 		await supabase.rpc('end_game', { game_id: gameId });
 		console.log(`Game ${gameId} status updated to 'completed'`);
+
+		// Save each player's team to the database
+		const allUsers = Array.from(game.users.values());
+		console.log(`Saving team data for ${allUsers.length} users in game ${gameId}`);
+
+		for (const user of allUsers) {
+			console.log(`Attempting to save team for ${user.username}:`, {
+				team: user.team,
+				budget: user.budget,
+				playersOwned: user.playersOwned
+			});
+
+			try {
+				const { data, error: updateError } = await supabase
+					.from('game_players')
+					.update({
+						team: user.team,
+						budget: user.budget,
+						players_owned: user.playersOwned
+					})
+					.eq('game_id', gameId)
+					.eq('username', user.username)
+					.select();
+
+				if (updateError) {
+					console.error(`Error updating team for user ${user.username}:`, updateError);
+				} else {
+					console.log(`Successfully saved team data for ${user.username}. Updated rows:`, data);
+				}
+			} catch (error) {
+				console.error(`Error saving team for user ${user.username}:`, error);
+			}
+		}
 	} catch (error) {
 		console.error('Error updating game status to completed:', error);
 	}
