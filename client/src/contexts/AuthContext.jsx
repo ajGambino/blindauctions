@@ -91,9 +91,7 @@ export const AuthProvider = ({ children }) => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: process.env.NODE_ENV === 'production'
-            ? 'https://blindauctions.onrender.com'
-            : 'http://localhost:5177'
+          redirectTo: window.location.origin
         }
       })
       if (error) throw error
