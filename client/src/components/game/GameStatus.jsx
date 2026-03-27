@@ -51,7 +51,6 @@ const GameStatus = () => {
 					</h2>
 					<p className='phase-description'>{gamePhase.description}</p>
 				</div>
-
 				<div className='user-info'>
 					<div className='user-card'>
 						<div className='user-name'>{currentUser.username}</div>

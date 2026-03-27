@@ -27,7 +27,7 @@ class GameManager {
 
 		this.games.set(gameId, gameState);
 		console.log(
-			`Created game ${gameId} with max ${gameState.maxPlayers} players and ${gameState.buyIn} buy-in`
+			`Created game ${gameId} with max ${gameState.maxPlayers} players and ${gameState.buyIn} buy-in`,
 		);
 		return gameState;
 	}
@@ -53,7 +53,7 @@ class GameManager {
 		const user = {
 			id: socketId,
 			username,
-			budget: 100, // Always $100 auction budget regardless of buy-in
+			budget: 100,
 			team: {
 				QB: null,
 				RB: null,
@@ -89,7 +89,9 @@ class GameManager {
 		const user = game.users.get(socketId);
 		if (user) {
 			user.disconnected = true;
-			console.log(`User ${user.username} marked as disconnected in game ${gameId}`);
+			console.log(
+				`User ${user.username} marked as disconnected in game ${gameId}`,
+			);
 		}
 
 		return false;
@@ -110,7 +112,9 @@ class GameManager {
 		game.users.delete(oldSocketId);
 		game.users.set(newSocketId, user);
 
-		console.log(`User ${user.username} reconnected with new socket ID in game ${gameId}`);
+		console.log(
+			`User ${user.username} reconnected with new socket ID in game ${gameId}`,
+		);
 		return user;
 	}
 
@@ -143,7 +147,7 @@ class GameManager {
 			game.currentNominator = (game.currentNominator + 1) % userArray.length;
 
 			const allUsersComplete = userArray.every(
-				(user) => user.playersOwned >= 5
+				(user) => user.playersOwned >= 5,
 			);
 			if (allUsersComplete) {
 				return { type: 'end' };
@@ -243,7 +247,7 @@ class GameManager {
 
 		// Remove player from available pool
 		game.availablePlayers = game.availablePlayers.filter(
-			(p) => p.id !== game.currentPlayer.id
+			(p) => p.id !== game.currentPlayer.id,
 		);
 		game.playersAuctioned++;
 
@@ -351,7 +355,7 @@ class GameManager {
 
 		// Remove player from available pool
 		game.availablePlayers = game.availablePlayers.filter(
-			(p) => p.id !== game.currentPlayer.id
+			(p) => p.id !== game.currentPlayer.id,
 		);
 		game.playersAuctioned++;
 
@@ -369,7 +373,7 @@ class GameManager {
 		if (!game) return true;
 
 		const allUsersComplete = Array.from(game.users.values()).every(
-			(user) => user.playersOwned >= 5
+			(user) => user.playersOwned >= 5,
 		);
 
 		return game.playersAuctioned >= game.totalPlayers || allUsersComplete;
